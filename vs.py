@@ -2,6 +2,17 @@
 
 import subprocess, os
 
+def directory_sort(a, b):
+    if a.startswith("Microsoft Visual Studio "):
+        if b.startswith("Microsoft Visual Studio "):
+            return int(float(b[23:]) - float(a[23:]))
+        else:
+            return -1
+    elif b.startswith("Microsoft Visual Studio "):
+        return 1
+    else:
+        return -1
+
 def get_devenv_path():
     # Check the progrom files location
     program_files = None
@@ -13,7 +24,7 @@ def get_devenv_path():
         raise Exception('Cannot find program files, are you running this on windows?')
 
     subdirectories = os.listdir(program_files)
-    subdirectories.reverse()
+    subdirectories.sort(cmp=directory_sort)
     for dir in subdirectories:
         if "Microsoft Visual Studio" in dir:
             # Found newest Visual Studio Version
