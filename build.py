@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 
-import vs, os
+import vs, os, sys
 
 def main():
+    # Parse the arguments
+    use_static = False
+    for x in sys.argv[1:]:
+        if x[0] == '-':
+            switch = x[1:]
+            if switch == 'static':
+                use_static = True
+
     print 'Finding Visual Studio folder'
     path = vs.get_devenv_path()
     if path != None:
-        print "Upgrade Visual Studio project"
-        res = vs.upgrade(path, "baseclasses\\baseclasses.vcproj")
-        if res != 0:
-            print "\tFailure to upgrade project"
-            return
-
         # Change the output folder
         content = None
         with open("baseclasses\\baseclasses.vcxproj", "r") as f:
@@ -19,6 +21,14 @@ def main():
             content = content.replace("<OutDir>Debug\\</OutDir>", "<OutDir>..\\lib</OutDir>")
             content = content.replace("<OutDir>Release\\</OutDir>", "<OutDir>..\\lib</OutDir>")
             content = content.replace("<OutDir>$(Platform)\\$(Configuration)\\</OutDir>", "<OutDir>..\\lib\\$(Platform)\\</OutDir>")
+
+            # Add static/dynamic to build
+            if use_static == True:
+                content = content.replace("<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
+                content = content.replace("<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
+            else:
+                content = content.replace("<RuntimeLibrary>MultiThreaded</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>")
+                content = content.replace("<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>")
         with open("baseclasses\\baseclasses.vcxproj", "w") as w:
             w.write(content)
 
