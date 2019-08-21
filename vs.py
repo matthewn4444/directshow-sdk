@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import subprocess, os
+import subprocess, os, operator, fnmatch
 
 def directory_sort(a, b):
     if a.startswith("Microsoft Visual Studio "):
@@ -12,6 +12,13 @@ def directory_sort(a, b):
         return 1
     else:
         return -1
+
+def find_files(directory, pattern):
+    for root, dirs, files in os.walk(directory):
+        for basename in files:
+            if fnmatch.fnmatch(basename, pattern):
+                filename = os.path.join(root, basename)
+                yield filename
 
 def get_devenv_path():
     # Check the progrom files location
@@ -27,8 +34,20 @@ def get_devenv_path():
     subdirectories.sort(cmp=directory_sort)
     for dir in subdirectories:
         if "Microsoft Visual Studio" in dir:
-            # Found newest Visual Studio Version
-            file = program_files + dir + "\\Common7\\IDE\\devenv.exe"
+            # Found newest Visual Studio Version by year
+            subdirs2 = os.listdir(program_files + dir)
+            subdirs2 = [s for s in subdirs2 if s.isdigit()]
+            subdirs2.sort(reverse=True)
+            if not subdirs2[0]:
+                print "Failed to find Visual Studio on this machine"
+                exit
+            path = program_files + dir + "\\" + subdirs2[0]
+
+            # Search for the devenv.exe in this folder
+            file = None
+            for filename in find_files(path, "devenv.exe"):
+                file = filename
+                break;
             if os.path.exists(file):
                 return file
             break
